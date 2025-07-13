@@ -1,4 +1,3 @@
-// src/FlowchartPage.jsx
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
@@ -28,44 +27,44 @@ const FlowchartPageContent = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [allLocked, setAllLocked] = useState(false);
 
-useEffect(() => {
-  const saved = localStorage.getItem(storageKey);
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    const rehydratedNodes = (parsed.nodes || []).map((node) => ({
-      ...node,
-      draggable: !allLocked,
-      data: {
-        ...node.data,
-        onChange: (field, value) => updateNodeData(node.id, field, value),
-        onColorChange: (color) => updateNodeData(node.id, 'color', color),
-        onPdfUpload: (pdfs) => updateNodeData(node.id, 'pdfs', pdfs),
-        onDelete: () => onDeleteNode(node.id),
-      },
-    }));
-    setNodes(rehydratedNodes);
-    setEdges(parsed.edges || []);
-  }
-}, [storageKey, allLocked]);
-
-  useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify({ nodes, edges }));
-  }, [nodes, edges, storageKey]);
-
-  const updateNodeData = (nodeId, field, value) => {
+  const updateNodeData = useCallback((nodeId, field, value) => {
     setNodes((nds) =>
       nds.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, [field]: value } } : n
       )
     );
-  };
+  }, [setNodes]);
 
-  const onDeleteNode = (nodeId) => {
+  const onDeleteNode = useCallback((nodeId) => {
     const confirmed = window.confirm('Are you sure you want to delete this node?');
     if (!confirmed) return;
     setNodes((nds) => nds.filter((n) => n.id !== nodeId));
     setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
-  };
+  }, [setNodes, setEdges]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const rehydratedNodes = (parsed.nodes || []).map((node) => ({
+        ...node,
+        draggable: !allLocked,
+        data: {
+          ...node.data,
+          onChange: (field, value) => updateNodeData(node.id, field, value),
+          onColorChange: (color) => updateNodeData(node.id, 'color', color),
+          onPdfUpload: (pdfs) => updateNodeData(node.id, 'pdfs', pdfs),
+          onDelete: () => onDeleteNode(node.id),
+        },
+      }));
+      setNodes(rehydratedNodes);
+      setEdges(parsed.edges || []);
+    }
+  }, [storageKey, allLocked, updateNodeData, onDeleteNode, setNodes, setEdges]);
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify({ nodes, edges }));
+  }, [nodes, edges, storageKey]);
 
   const addNode = () => {
     const id = `${Date.now()}`;
