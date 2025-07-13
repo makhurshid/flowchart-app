@@ -6,6 +6,7 @@ const LOCAL_STORAGE_KEY = 'submittal-tracker-projects';
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -88,22 +89,21 @@ const Dashboard = () => {
     );
   };
 
- const deleteTask = (projectId, index) => {
-  const confirmed = window.confirm('Are you sure you want to delete this task?');
-  if (!confirmed) return;
+  const deleteTask = (projectId, index) => {
+    const confirmed = window.confirm('Are you sure you want to delete this task?');
+    if (!confirmed) return;
 
-  setProjects((prev) =>
-    prev.map((proj) => {
-      if (proj.id === projectId) {
-        const updatedTasks = [...(proj.tasks || [])];
-        updatedTasks.splice(index, 1);
-        return { ...proj, tasks: updatedTasks };
-      }
-      return proj;
-    })
-  );
-};
-
+    setProjects((prev) =>
+      prev.map((proj) => {
+        if (proj.id === projectId) {
+          const updatedTasks = [...(proj.tasks || [])];
+          updatedTasks.splice(index, 1);
+          return { ...proj, tasks: updatedTasks };
+        }
+        return proj;
+      })
+    );
+  };
 
   const handleFileUpload = (projectId, index, file) => {
     const reader = new FileReader();
@@ -140,7 +140,6 @@ const Dashboard = () => {
 
   const onDragEnd = (result, projectId) => {
     if (!result.destination) return;
-
     const { source, destination } = result;
     setProjects((prev) =>
       prev.map((proj) => {
@@ -162,21 +161,33 @@ const Dashboard = () => {
     }
   };
 
-  const activeProjects = projects.filter((p) => !p.archived);
+  const activeProjects = projects.filter(
+    (p) => !p.archived && p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const archivedProjects = projects.filter((p) => p.archived);
 
   return (
     <div className="min-h-screen bg-gray-200">
-      <div className="flex justify-between items-center px-10 py-6 bg-white shadow-md sticky top-0 z-10">
+      <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center px-10 py-6 bg-white shadow-md sticky top-0 z-10 gap-4">
         <h1 className="text-3xl font-bold">Submittal Tracker</h1>
-        <button
-          onClick={handleNewProject}
-          className="bg-blue-700 text-white px-6 py-2 text-sm rounded hover:bg-blue-800"
-        >
-          + New Project
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm w-full sm:w-64"
+          />
+          <button
+            onClick={handleNewProject}
+            className="bg-blue-700 text-white px-6 py-2 text-sm rounded hover:bg-blue-800"
+          >
+            + New Project
+          </button>
+        </div>
       </div>
 
+      {/* Active Project Cards */}
       {activeProjects.map((project) => (
         <div
           key={project.id}
@@ -190,6 +201,7 @@ const Dashboard = () => {
             className="text-3xl font-semibold w-full mb-6 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
           />
 
+          {/* Flowchart + Submittal Buttons */}
           <div className="flex flex-col md:flex-row gap-4 mt-6">
             <div
               className="flex-1 bg-white rounded-xl shadow-md border border-gray-300 p-6 hover:shadow-lg cursor-pointer transition"
@@ -208,6 +220,7 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Tasks */}
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Tasks</h3>
             <button
@@ -305,6 +318,7 @@ const Dashboard = () => {
             </DragDropContext>
           </div>
 
+          {/* Archive/Delete */}
           <div className="flex justify-end gap-4 mt-6">
             <button
               onClick={() => archiveProject(project.id)}
@@ -322,6 +336,7 @@ const Dashboard = () => {
         </div>
       ))}
 
+      {/* Archived Projects */}
       {archivedProjects.length > 0 && (
         <div className="max-w-5xl mx-auto my-12 p-6 bg-yellow-50 rounded-xl shadow">
           <h2 className="text-xl font-bold mb-4">Archived Projects</h2>
