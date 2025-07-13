@@ -17,11 +17,15 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
     reader.readAsDataURL(file);
   };
 
-  const removePdf = (index) => {
-    const newPdfs = [...(data.pdfs || [])];
-    newPdfs.splice(index, 1);
-    if (data.onPdfUpload) data.onPdfUpload(newPdfs);
-  };
+ const removePdf = (index) => {
+  const confirmDelete = window.confirm('Are you sure you want to remove this PDF?');
+  if (!confirmDelete) return;
+
+  const newPdfs = [...(data.pdfs || [])];
+  newPdfs.splice(index, 1);
+  if (data.onPdfUpload) data.onPdfUpload(newPdfs);
+};
+
 
   const updatePdfDate = (index, date) => {
     const newPdfs = [...(data.pdfs || [])];

@@ -28,17 +28,26 @@ const FlowchartPageContent = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [allLocked, setAllLocked] = useState(false);
 
-  // Load saved data
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setNodes(parsed.nodes || []);
-      setEdges(parsed.edges || []);
-    }
-  }, [storageKey]);
+useEffect(() => {
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    const rehydratedNodes = (parsed.nodes || []).map((node) => ({
+      ...node,
+      draggable: !allLocked,
+      data: {
+        ...node.data,
+        onChange: (field, value) => updateNodeData(node.id, field, value),
+        onColorChange: (color) => updateNodeData(node.id, 'color', color),
+        onPdfUpload: (pdfs) => updateNodeData(node.id, 'pdfs', pdfs),
+        onDelete: () => onDeleteNode(node.id),
+      },
+    }));
+    setNodes(rehydratedNodes);
+    setEdges(parsed.edges || []);
+  }
+}, [storageKey, allLocked]);
 
-  // Save data
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify({ nodes, edges }));
   }, [nodes, edges, storageKey]);
@@ -82,7 +91,7 @@ const FlowchartPageContent = () => {
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
-    []
+    [setEdges]
   );
 
   const toggleLockAll = () => {
