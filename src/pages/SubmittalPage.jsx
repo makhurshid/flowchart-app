@@ -95,11 +95,14 @@ const toggleEntrySection = (type) => {
 
 
 
-  const deleteDoc = (docId) => {
-    const updatedDocs = importantDocs.filter(doc => doc.id !== docId);
-    setImportantDocs(updatedDocs);
-    updateProject({ ...project, importantDocs: updatedDocs });
-  };
+const deleteDoc = (docId) => {
+  const confirmed = window.confirm('Are you sure you want to delete this document?');
+  if (!confirmed) return;
+  const updatedDocs = importantDocs.filter(doc => doc.id !== docId);
+  setImportantDocs(updatedDocs);
+  updateProject({ ...project, importantDocs: updatedDocs });
+};
+
 const handleAddEntry = (type) => {
   const newEntry = {
     id: Date.now(),
@@ -135,11 +138,14 @@ const handleEntryFileUpload = (index, file) => {
 };
 
 const handleDeleteEntry = (index) => {
+  const confirmed = window.confirm('Are you sure you want to delete this entry?');
+  if (!confirmed) return;
   const updated = [...entries];
   updated.splice(index, 1);
   setEntries(updated);
   updateProject({ ...project, entries: updated });
 };
+
 
 
 
@@ -204,17 +210,20 @@ const handleDeleteEntry = (index) => {
 
 
 
-  const deleteFeature = (roofId, index) => {
-    const updatedRoofs = project.roofs.map((roof) => {
-      if (roof.id === roofId) {
-        const features = [...roof.features];
-        features.splice(index, 1);
-        return { ...roof, features };
-      }
-      return roof;
-    });
-    updateProject({ ...project, roofs: updatedRoofs });
-  };
+const deleteFeature = (roofId, index) => {
+  const confirmed = window.confirm('Are you sure you want to delete this roof feature?');
+  if (!confirmed) return;
+  const updatedRoofs = project.roofs.map((roof) => {
+    if (roof.id === roofId) {
+      const features = [...roof.features];
+      features.splice(index, 1);
+      return { ...roof, features };
+    }
+    return roof;
+  });
+  updateProject({ ...project, roofs: updatedRoofs });
+};
+
 
 
 
@@ -250,17 +259,20 @@ const handleDeleteEntry = (index) => {
 
 
 
-  const deleteProductName = (roofId, index) => {
-    const updatedRoofs = project.roofs.map((roof) => {
-      if (roof.id === roofId) {
-        const products = [...roof.products];
-        products.splice(index, 1);
-        return { ...roof, products };
-      }
-      return roof;
-    });
-    updateProject({ ...project, roofs: updatedRoofs });
-  };
+const deleteProductName = (roofId, index) => {
+  const confirmed = window.confirm('Are you sure you want to delete this product?');
+  if (!confirmed) return;
+  const updatedRoofs = project.roofs.map((roof) => {
+    if (roof.id === roofId) {
+      const products = [...roof.products];
+      products.splice(index, 1);
+      return { ...roof, products };
+    }
+    return roof;
+  });
+  updateProject({ ...project, roofs: updatedRoofs });
+};
+
 
 
 
@@ -317,17 +329,20 @@ const updateProductFeature = (roofId, productIndex, featureIndex, value, key = '
 
 
 
-  const deleteProductFeature = (roofId, productIndex, featureIndex) => {
-    const updatedRoofs = project.roofs.map((roof) => {
-      if (roof.id === roofId) {
-        const products = [...roof.products];
-        products[productIndex].features.splice(featureIndex, 1);
-        return { ...roof, products };
-      }
-      return roof;
-    });
-    updateProject({ ...project, roofs: updatedRoofs });
-  };
+const deleteProductFeature = (roofId, productIndex, featureIndex) => {
+  const confirmed = window.confirm('Are you sure you want to delete this product feature?');
+  if (!confirmed) return;
+  const updatedRoofs = project.roofs.map((roof) => {
+    if (roof.id === roofId) {
+      const products = [...roof.products];
+      products[productIndex].features.splice(featureIndex, 1);
+      return { ...roof, products };
+    }
+    return roof;
+  });
+  updateProject({ ...project, roofs: updatedRoofs });
+};
+
 
 
 

@@ -12,7 +12,7 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const newPdfs = [...(data.pdfs || []), { name: file.name, url: reader.result, date: '' }];
-      if (data.onPdfUpload) data.onPdfUpload(id, newPdfs);
+      if (data.onPdfUpload) data.onPdfUpload(newPdfs);
     };
     reader.readAsDataURL(file);
   };
@@ -20,21 +20,27 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
   const removePdf = (index) => {
     const newPdfs = [...(data.pdfs || [])];
     newPdfs.splice(index, 1);
-    if (data.onPdfUpload) data.onPdfUpload(id, newPdfs);
+    if (data.onPdfUpload) data.onPdfUpload(newPdfs);
   };
 
   const updatePdfDate = (index, date) => {
     const newPdfs = [...(data.pdfs || [])];
     newPdfs[index].date = date;
-    if (data.onPdfUpload) data.onPdfUpload(id, newPdfs);
+    if (data.onPdfUpload) data.onPdfUpload(newPdfs);
   };
 
   const setColor = (color) => {
-    if (data.onColorChange) data.onColorChange(id, color);
+    if (data.onColorChange) data.onColorChange(color);
   };
 
   const handleChange = (field, value) => {
-    if (data.onChange) data.onChange(id, field, value);
+    if (data.onChange) data.onChange(field, value);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this node?')) {
+      if (data.onDelete) data.onDelete();
+    }
   };
 
   return (
@@ -46,7 +52,7 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
     >
       <Handle type="target" position="top" />
 
-      {/* Title and Date Row */}
+      {/* Title and Date */}
       <div className="flex justify-between items-center gap-2 mb-2">
         <textarea
           value={data.title || ''}
@@ -63,7 +69,7 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
         />
       </div>
 
-      {/* Content Area */}
+      {/* Content */}
       <textarea
         value={data.content || ''}
         placeholder="Write here..."
@@ -97,7 +103,7 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
         }}
       />
 
-      {/* PDF Viewer and Upload with Date Picker */}
+      {/* PDFs */}
       <div className="mt-2 space-y-1">
         {(data.pdfs || []).map((pdf, index) => (
           <div key={index} className="flex flex-col gap-1 text-xs border-t pt-1 mt-1">
@@ -140,7 +146,7 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
         />
       </div>
 
-      {/* Color buttons and delete */}
+      {/* Color & Delete */}
       <div className="flex justify-between items-center mt-2">
         <div className="flex gap-1 items-center">
           <button
@@ -160,7 +166,7 @@ const FlowchartNode = ({ id, data = {}, selected }) => {
           ></button>
         </div>
         <button
-          onClick={() => data.onDelete && data.onDelete(id)}
+          onClick={handleDelete}
           className="text-red-500 text-xs hover:underline"
         >
           Delete

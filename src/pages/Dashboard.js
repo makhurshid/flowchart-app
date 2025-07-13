@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 const LOCAL_STORAGE_KEY = 'submittal-tracker-projects';
 
@@ -43,12 +44,6 @@ const Dashboard = () => {
     );
   };
 
-  const deleteProject = (id) => {
-    const confirmed = window.confirm('Are you sure you want to delete this project?');
-    if (!confirmed) return;
-    setProjects((prev) => prev.filter((proj) => proj.id !== id));
-  };
-
   const archiveProject = (id) => {
     setProjects((prev) =>
       prev.map((proj) => (proj.id === id ? { ...proj, archived: true } : proj))
@@ -61,11 +56,20 @@ const Dashboard = () => {
     );
   };
 
+  const deleteProject = (id) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      setProjects((prev) => prev.filter((proj) => proj.id !== id));
+    }
+  };
+
   const addTask = (projectId) => {
     setProjects((prev) =>
       prev.map((proj) =>
         proj.id === projectId
-          ? { ...proj, tasks: [...(proj.tasks || []), { text: '', done: false, pdfs: [] }] }
+          ? {
+              ...proj,
+              tasks: [...(proj.tasks || []), { text: '', done: false, pdfs: [] }],
+            }
           : proj
       )
     );
@@ -75,7 +79,7 @@ const Dashboard = () => {
     setProjects((prev) =>
       prev.map((proj) => {
         if (proj.id === projectId) {
-          const updatedTasks = [...(proj.tasks || [])];
+          const updatedTasks = [...proj.tasks];
           updatedTasks[index] = { ...updatedTasks[index], [field]: value };
           return { ...proj, tasks: updatedTasks };
         }
@@ -84,18 +88,22 @@ const Dashboard = () => {
     );
   };
 
-  const deleteTask = (projectId, index) => {
-    setProjects((prev) =>
-      prev.map((proj) => {
-        if (proj.id === projectId) {
-          const updatedTasks = [...(proj.tasks || [])];
-          updatedTasks.splice(index, 1);
-          return { ...proj, tasks: updatedTasks };
-        }
-        return proj;
-      })
-    );
-  };
+ const deleteTask = (projectId, index) => {
+  const confirmed = window.confirm('Are you sure you want to delete this task?');
+  if (!confirmed) return;
+
+  setProjects((prev) =>
+    prev.map((proj) => {
+      if (proj.id === projectId) {
+        const updatedTasks = [...(proj.tasks || [])];
+        updatedTasks.splice(index, 1);
+        return { ...proj, tasks: updatedTasks };
+      }
+      return proj;
+    })
+  );
+};
+
 
   const handleFileUpload = (projectId, index, file) => {
     const reader = new FileReader();
@@ -124,6 +132,23 @@ const Dashboard = () => {
           pdfs.splice(pdfIdx, 1);
           tasks[taskIdx] = { ...tasks[taskIdx], pdfs };
           return { ...proj, tasks };
+        }
+        return proj;
+      })
+    );
+  };
+
+  const onDragEnd = (result, projectId) => {
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+    setProjects((prev) =>
+      prev.map((proj) => {
+        if (proj.id === projectId) {
+          const reordered = Array.from(proj.tasks);
+          const [moved] = reordered.splice(source.index, 1);
+          reordered.splice(destination.index, 0, moved);
+          return { ...proj, tasks: reordered };
         }
         return proj;
       })
@@ -191,73 +216,93 @@ const Dashboard = () => {
             >
               + Add Task
             </button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {(project.tasks || []).map((task, idx) => (
-                <div key={idx} className="flex flex-col border rounded p-2 bg-gray-50">
-                  <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={(e) =>
-                        updateTask(project.id, idx, 'done', e.target.checked)
-                      }
-                    />
-                    <textarea
-                      value={task.text}
-                      onChange={(e) => {
-                        updateTask(project.id, idx, 'text', e.target.value);
-                        autoResize(e.target);
-                      }}
-                      placeholder="Task..."
-                      className={`flex-1 text-sm resize-none border-none bg-transparent focus:outline-none overflow-hidden ${
-                        task.done ? 'line-through text-gray-400' : ''
-                      }`}
-                      rows={1}
-                      ref={(el) => el && autoResize(el)}
-                    />
-                  </div>
 
-                  {/* PDF section */}
-                  <div className="mt-2 space-y-1">
-                    {(task.pdfs || []).map((pdf, i) => (
-                      <div key={i} className="flex justify-between items-center text-xs">
-                        <a
-                          href={pdf.content}
-                          download={pdf.name}
-                          className="text-blue-600 underline truncate"
-                        >
-                          {pdf.name}
-                        </a>
-                        <button
-                          onClick={() => removePdf(project.id, idx, i)}
-                          className="text-red-500 text-[10px] hover:underline"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={(e) => {
-                        if (e.target.files[0]) {
-                          handleFileUpload(project.id, idx, e.target.files[0]);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="text-xs"
-                    />
-                  </div>
-
-                  <button
-                    onClick={() => deleteTask(project.id, idx)}
-                    className="text-xs text-red-500 hover:underline mt-2 self-end"
+            <DragDropContext onDragEnd={(result) => onDragEnd(result, project.id)}>
+              <Droppable droppableId={`droppable-${project.id}`} direction="vertical">
+                {(provided) => (
+                  <div
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
                   >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
+                    {(project.tasks || []).map((task, idx) => (
+                      <Draggable key={idx} draggableId={`task-${project.id}-${idx}`} index={idx}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="flex flex-col border rounded p-2 bg-gray-50"
+                          >
+                            <div className="flex items-start gap-2">
+                              <input
+                                type="checkbox"
+                                checked={task.done}
+                                onChange={(e) =>
+                                  updateTask(project.id, idx, 'done', e.target.checked)
+                                }
+                              />
+                              <textarea
+                                value={task.text}
+                                onChange={(e) => {
+                                  updateTask(project.id, idx, 'text', e.target.value);
+                                  autoResize(e.target);
+                                }}
+                                placeholder="Task..."
+                                className={`flex-1 text-sm resize-none border-none bg-transparent focus:outline-none overflow-hidden ${
+                                  task.done ? 'line-through text-gray-400' : ''
+                                }`}
+                                rows={1}
+                                ref={(el) => el && autoResize(el)}
+                              />
+                            </div>
+
+                            <div className="mt-2 space-y-1">
+                              {(task.pdfs || []).map((pdf, i) => (
+                                <div key={i} className="flex justify-between items-center text-xs">
+                                  <a
+                                    href={pdf.content}
+                                    download={pdf.name}
+                                    className="text-blue-600 underline truncate"
+                                  >
+                                    {pdf.name}
+                                  </a>
+                                  <button
+                                    onClick={() => removePdf(project.id, idx, i)}
+                                    className="text-red-500 text-[10px] hover:underline"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                              <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={(e) => {
+                                  if (e.target.files[0]) {
+                                    handleFileUpload(project.id, idx, e.target.files[0]);
+                                    e.target.value = '';
+                                  }
+                                }}
+                                className="text-xs"
+                              />
+                            </div>
+
+                            <button
+                              onClick={() => deleteTask(project.id, idx)}
+                              className="text-xs text-red-500 hover:underline mt-2 self-end"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
 
           <div className="flex justify-end gap-4 mt-6">

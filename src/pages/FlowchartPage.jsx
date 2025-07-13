@@ -1,5 +1,5 @@
 // src/FlowchartPage.jsx
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -17,51 +17,64 @@ const nodeTypes = {
   flowNode: FlowchartNode,
 };
 
+const LOCAL_STORAGE_KEY = 'flowchart-data';
+
 const FlowchartPageContent = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const storageKey = `${LOCAL_STORAGE_KEY}-${projectId}`;
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [allLocked, setAllLocked] = useState(false);
 
+  // Load saved data
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setNodes(parsed.nodes || []);
+      setEdges(parsed.edges || []);
+    }
+  }, [storageKey]);
+
+  // Save data
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify({ nodes, edges }));
+  }, [nodes, edges, storageKey]);
+
+  const updateNodeData = (nodeId, field, value) => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId ? { ...n, data: { ...n.data, [field]: value } } : n
+      )
+    );
+  };
+
+  const onDeleteNode = (nodeId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this node?');
+    if (!confirmed) return;
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+  };
+
   const addNode = () => {
-    const id = `${nodes.length + 1}`;
+    const id = `${Date.now()}`;
     const newNode = {
       id,
       type: 'flowNode',
       position: { x: 150 + nodes.length * 20, y: 150 + nodes.length * 20 },
       draggable: !allLocked,
       data: {
-        title: `Title here`,
+        title: 'Title here',
         content: '',
         color: '#e5e7eb',
         pdfs: [],
         date: '',
-        onChange: (nodeId, field, value) => {
-          setNodes((nds) =>
-            nds.map((n) =>
-              n.id === nodeId ? { ...n, data: { ...n.data, [field]: value } } : n
-            )
-          );
-        },
-        onColorChange: (nodeId, color) => {
-          setNodes((nds) =>
-            nds.map((n) =>
-              n.id === nodeId ? { ...n, data: { ...n.data, color } } : n
-            )
-          );
-        },
-        onPdfUpload: (nodeId, pdfs) => {
-          setNodes((nds) =>
-            nds.map((n) =>
-              n.id === nodeId ? { ...n, data: { ...n.data, pdfs } } : n
-            )
-          );
-        },
-        onDelete: (nodeId) => {
-          setNodes((nds) => nds.filter((n) => n.id !== nodeId));
-          setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
-        },
+        onChange: (field, value) => updateNodeData(id, field, value),
+        onColorChange: (color) => updateNodeData(id, 'color', color),
+        onPdfUpload: (pdfs) => updateNodeData(id, 'pdfs', pdfs),
+        onDelete: () => onDeleteNode(id),
       },
     };
     setNodes((nds) => [...nds, newNode]);
