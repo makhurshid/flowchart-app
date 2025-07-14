@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
+
 const LOCAL_STORAGE_KEY = 'submittal-tracker-projects';
+
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -25,9 +28,11 @@ const Dashboard = () => {
     }
   }, []);
 
+
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(projects));
   }, [projects]);
+
 
   const handleNewProject = () => {
     const newProject = {
@@ -39,11 +44,13 @@ const Dashboard = () => {
     setProjects([newProject, ...projects]);
   };
 
+
   const updateProject = (id, field, value) => {
     setProjects((prev) =>
       prev.map((proj) => (proj.id === id ? { ...proj, [field]: value } : proj))
     );
   };
+
 
   const archiveProject = (id) => {
     setProjects((prev) =>
@@ -51,17 +58,20 @@ const Dashboard = () => {
     );
   };
 
+
   const restoreProject = (id) => {
     setProjects((prev) =>
       prev.map((proj) => (proj.id === id ? { ...proj, archived: false } : proj))
     );
   };
 
+
   const deleteProject = (id) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       setProjects((prev) => prev.filter((proj) => proj.id !== id));
     }
   };
+
 
   const addTask = (projectId) => {
     setProjects((prev) =>
@@ -76,6 +86,7 @@ const Dashboard = () => {
     );
   };
 
+
   const updateTask = (projectId, index, field, value) => {
     setProjects((prev) =>
       prev.map((proj) => {
@@ -89,9 +100,11 @@ const Dashboard = () => {
     );
   };
 
+
   const deleteTask = (projectId, index) => {
     const confirmed = window.confirm('Are you sure you want to delete this task?');
     if (!confirmed) return;
+
 
     setProjects((prev) =>
       prev.map((proj) => {
@@ -104,6 +117,7 @@ const Dashboard = () => {
       })
     );
   };
+
 
   const handleFileUpload = (projectId, index, file) => {
     const reader = new FileReader();
@@ -123,6 +137,7 @@ const Dashboard = () => {
     reader.readAsDataURL(file);
   };
 
+
   const removePdf = (projectId, taskIdx, pdfIdx) => {
     setProjects((prev) =>
       prev.map((proj) => {
@@ -137,6 +152,7 @@ const Dashboard = () => {
       })
     );
   };
+
 
   const onDragEnd = (result, projectId) => {
     if (!result.destination) return;
@@ -154,6 +170,7 @@ const Dashboard = () => {
     );
   };
 
+
   const autoResize = (el) => {
     if (el) {
       el.style.height = 'auto';
@@ -161,10 +178,12 @@ const Dashboard = () => {
     }
   };
 
+
   const activeProjects = projects.filter(
     (p) => !p.archived && p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const archivedProjects = projects.filter((p) => p.archived);
+
 
   return (
     <div className="min-h-screen bg-gray-200">
@@ -187,6 +206,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+
       {/* Active Project Cards */}
       {activeProjects.map((project) => (
         <div
@@ -201,6 +221,7 @@ const Dashboard = () => {
             className="text-3xl font-semibold w-full mb-6 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
           />
 
+
           {/* Flowchart + Submittal Buttons */}
           <div className="flex flex-col md:flex-row gap-4 mt-6">
             <div
@@ -211,6 +232,7 @@ const Dashboard = () => {
               <p className="text-xs text-gray-600">Click to manage submittals for this project.</p>
             </div>
 
+
             <div
               className="flex-1 bg-white rounded-xl shadow-md border border-gray-300 p-6 hover:shadow-lg cursor-pointer transition"
               onClick={() => navigate(`/flowchart/${project.id}`)}
@@ -219,6 +241,7 @@ const Dashboard = () => {
               <p className="text-xs text-gray-600">Click to open the visual flowchart.</p>
             </div>
           </div>
+
 
           {/* Tasks */}
           <div className="mt-6">
@@ -229,6 +252,7 @@ const Dashboard = () => {
             >
               + Add Task
             </button>
+
 
             <DragDropContext onDragEnd={(result) => onDragEnd(result, project.id)}>
               <Droppable droppableId={`droppable-${project.id}`} direction="vertical">
@@ -270,6 +294,7 @@ const Dashboard = () => {
                               />
                             </div>
 
+
                             <div className="mt-2 space-y-1">
                               {(task.pdfs || []).map((pdf, i) => (
                                 <div key={i} className="flex justify-between items-center text-xs">
@@ -301,6 +326,7 @@ const Dashboard = () => {
                               />
                             </div>
 
+
                             <button
                               onClick={() => deleteTask(project.id, idx)}
                               className="text-xs text-red-500 hover:underline mt-2 self-end"
@@ -317,6 +343,7 @@ const Dashboard = () => {
               </Droppable>
             </DragDropContext>
           </div>
+
 
           {/* Archive/Delete */}
           <div className="flex justify-end gap-4 mt-6">
@@ -335,6 +362,7 @@ const Dashboard = () => {
           </div>
         </div>
       ))}
+
 
       {/* Archived Projects */}
       {archivedProjects.length > 0 && (
@@ -359,4 +387,8 @@ const Dashboard = () => {
   );
 };
 
+
 export default Dashboard;
+
+
+
